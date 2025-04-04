@@ -630,11 +630,11 @@ class TFGenerationMixin:
             if value is not None and key not in model_args:
                 unused_model_args.append(key)
 
-        # if unused_model_args:
-        #     raise ValueError(
-        #         f"The following `model_kwargs` are not used by the model: {unused_model_args} (note: typos in the"
-        #         " generate arguments will also show up in this list)"
-        #     )
+        if unused_model_args:
+            raise ValueError(
+                f"The following `model_kwargs` are not used by the model: {unused_model_args} (note: typos in the"
+                " generate arguments will also show up in this list)"
+            )
 
     def generate(
         self,
