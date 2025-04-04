@@ -18,7 +18,8 @@ import inspect
 import os
 import warnings
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple,
+                    Union)
 
 import numpy as np
 import torch
@@ -26,84 +27,52 @@ import torch.distributed as dist
 from torch import nn
 from torch.nn import functional as F
 
-from ..cache_utils import (
-    Cache,
-    DynamicCache,
-    EncoderDecoderCache,
-    OffloadedCache,
-    QuantizedCacheConfig,
-    StaticCache,
-)
+from ..cache_utils import (Cache, DynamicCache, EncoderDecoderCache,
+                           OffloadedCache, QuantizedCacheConfig, StaticCache)
 from ..configuration_utils import PretrainedConfig
 from ..integrations.deepspeed import is_deepspeed_zero3_enabled
 from ..integrations.fsdp import is_fsdp_managed_module
 from ..modeling_outputs import CausalLMOutputWithPast, Seq2SeqLMOutput
 from ..pytorch_utils import isin_mps_friendly
 from ..tokenization_utils import ExtensionsTrie
-from ..utils import (
-    ModelOutput,
-    is_accelerate_available,
-    is_hqq_available,
-    is_optimum_quanto_available,
-    is_torchdynamo_compiling,
-    logging,
-)
+from ..utils import (ModelOutput, is_accelerate_available, is_hqq_available,
+                     is_optimum_quanto_available, is_torchdynamo_compiling,
+                     logging)
 from .beam_constraints import DisjunctiveConstraint, PhrasalConstraint
-from .beam_search import BeamScorer, BeamSearchScorer, ConstrainedBeamSearchScorer
+from .beam_search import (BeamScorer, BeamSearchScorer,
+                          ConstrainedBeamSearchScorer)
 from .candidate_generator import (
-    AssistedCandidateGenerator,
-    AssistedCandidateGeneratorDifferentTokenizers,
-    CandidateGenerator,
-    EarlyExitCandidateGenerator,
-    PromptLookupCandidateGenerator,
-    _crop_past_key_values,
-    _prepare_attention_mask,
-    _prepare_token_type_ids,
-)
-from .configuration_utils import (
-    NEED_SETUP_CACHE_CLASSES_MAPPING,
-    QUANT_BACKEND_CLASSES_MAPPING,
-    GenerationConfig,
-    GenerationMode,
-)
-from .logits_process import (
-    EncoderNoRepeatNGramLogitsProcessor,
-    EncoderRepetitionPenaltyLogitsProcessor,
-    EpsilonLogitsWarper,
-    EtaLogitsWarper,
-    ExponentialDecayLengthPenalty,
-    ForcedBOSTokenLogitsProcessor,
-    ForcedEOSTokenLogitsProcessor,
-    HammingDiversityLogitsProcessor,
-    InfNanRemoveLogitsProcessor,
-    LogitNormalization,
-    LogitsProcessorList,
-    MinLengthLogitsProcessor,
-    MinNewTokensLengthLogitsProcessor,
-    MinPLogitsWarper,
-    NoBadWordsLogitsProcessor,
-    NoRepeatNGramLogitsProcessor,
-    PrefixConstrainedLogitsProcessor,
-    RepetitionPenaltyLogitsProcessor,
-    SequenceBiasLogitsProcessor,
-    SuppressTokensAtBeginLogitsProcessor,
-    SuppressTokensLogitsProcessor,
-    TemperatureLogitsWarper,
-    TopKLogitsWarper,
-    TopPLogitsWarper,
-    TypicalLogitsWarper,
-    UnbatchedClassifierFreeGuidanceLogitsProcessor,
-)
-from .stopping_criteria import (
-    ConfidenceCriteria,
-    EosTokenCriteria,
-    MaxLengthCriteria,
-    MaxTimeCriteria,
-    StoppingCriteria,
-    StoppingCriteriaList,
-    StopStringCriteria,
-)
-
+    AssistedCandidateGenerator, AssistedCandidateGeneratorDifferentTokenizers,
+    CandidateGenerator, EarlyExitCandidateGenerator,
+    PromptLookupCandidateGenerator, _crop_past_key_values,
+    _prepare_attention_mask, _prepare_token_type_ids)
+from .configuration_utils import (NEED_SETUP_CACHE_CLASSES_MAPPING,
+                                  QUANT_BACKEND_CLASSES_MAPPING,
+                                  GenerationConfig, GenerationMode)
+from .logits_process import (EncoderNoRepeatNGramLogitsProcessor,
+                             EncoderRepetitionPenaltyLogitsProcessor,
+                             EpsilonLogitsWarper, EtaLogitsWarper,
+                             ExponentialDecayLengthPenalty,
+                             ForcedBOSTokenLogitsProcessor,
+                             ForcedEOSTokenLogitsProcessor,
+                             HammingDiversityLogitsProcessor,
+                             InfNanRemoveLogitsProcessor, LogitNormalization,
+                             LogitsProcessorList, MinLengthLogitsProcessor,
+                             MinNewTokensLengthLogitsProcessor,
+                             MinPLogitsWarper, NoBadWordsLogitsProcessor,
+                             NoRepeatNGramLogitsProcessor,
+                             PrefixConstrainedLogitsProcessor,
+                             RepetitionPenaltyLogitsProcessor,
+                             SequenceBiasLogitsProcessor,
+                             SuppressTokensAtBeginLogitsProcessor,
+                             SuppressTokensLogitsProcessor,
+                             TemperatureLogitsWarper, TopKLogitsWarper,
+                             TopPLogitsWarper, TypicalLogitsWarper,
+                             UnbatchedClassifierFreeGuidanceLogitsProcessor)
+from .stopping_criteria import (ConfidenceCriteria, EosTokenCriteria,
+                                MaxLengthCriteria, MaxTimeCriteria,
+                                StoppingCriteria, StoppingCriteriaList,
+                                StopStringCriteria)
 
 if TYPE_CHECKING:
     from ..modeling_utils import PreTrainedModel
@@ -1381,7 +1350,7 @@ class GenerationMixin:
                 model_args |= {"assistant_encoder_outputs"}
 
         for key, value in model_kwargs.items():
-            if value is not None and key not in model_args:
+            if value is not None and key not in model_args and key not in ["stop", "callback"]:
                 unused_model_args.append(key)
 
         if unused_model_args:

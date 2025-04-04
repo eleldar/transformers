@@ -38,7 +38,6 @@ from ...modeling_outputs import BaseModelOutput
 from ...utils import logging
 from .tokenization_whisper import TASK_IDS, TO_LANGUAGE_CODE
 
-
 logger = logging.get_logger(__name__)
 
 
@@ -620,7 +619,19 @@ class WhisperGenerationMixin(GenerationMixin):
         )
 
         # 6 Transcribe audio until we reach the end of all input audios
+        is_callback = None
+        is_stop = None
+        if "callback" in kwargs:
+            callback = kwargs.pop("callback")
+            is_callback = True
+        if "stop" in kwargs:
+            stop = kwargs.pop("stop")
+            is_stop = True
         while (seek < max_frames).any():
+            if is_stop and stop():
+                raise Exception("KeyboardInterrupt (STOP)")
+            if is_callback:
+                callback(seek, max_frames)
             # 6.1 NOTE: When in longform transcription mode and batch size > 1 we need to dynamically reduce the batch size during the loop
             # in case one audio finished earlier than another one. Thus, we need to keep a table of "previous-index-2-current-index" in order
             # to know which original audio is being decoded
@@ -736,6 +747,8 @@ class WhisperGenerationMixin(GenerationMixin):
                 else:
                     seek[prev_i] += segment_offset
 
+        if is_callback:
+            callback(seek, max_frames, end=True)
         # 7. Once all segments are added to the list of all segments, called `current_segments`, we extract the predicted
         # output tokens from the list of dicts. If we use batch size > 1, we make sure to pad the output
         final_segments = (
@@ -1409,9 +1422,7 @@ class WhisperGenerationMixin(GenerationMixin):
                 and init_tokens[i][-1] != generation_config.no_timestamps_token_id
             ):
                 init_tokens[i].append(generation_config.no_timestamps_token_id)
-            elif (
-                generation_config.return_timestamps and init_tokens[i][-1] == generation_config.no_timestamps_token_id
-            ):
+            elif generation_config.return_timestamps and init_tokens[i][-1] == generation_config.no_timestamps_token_id:
                 logger.info(
                     "<|notimestamps|> prompt token is removed from generation_config since `return_timestamps` is set to `'True'`."
                 )
@@ -1471,8 +1482,7 @@ class WhisperGenerationMixin(GenerationMixin):
 
         generation_config = generation_config or self.generation_config
         decoder_input_ids = (
-            torch.ones((batch_size, 1), device=self.device, dtype=torch.long)
-            * generation_config.decoder_start_token_id
+            torch.ones((batch_size, 1), device=self.device, dtype=torch.long) * generation_config.decoder_start_token_id
         )
 
         with torch.no_grad():
