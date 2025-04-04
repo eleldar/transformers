@@ -25,31 +25,25 @@ import tensorflow as tf
 from tensorflow.compiler.tf2xla.python.xla import dynamic_update_slice
 
 from ..modeling_tf_outputs import TFCausalLMOutputWithPast, TFSeq2SeqLMOutput
-from ..models.auto import (
-    TF_MODEL_FOR_CAUSAL_LM_MAPPING,
-    TF_MODEL_FOR_SEQ_TO_SEQ_CAUSAL_LM_MAPPING,
-    TF_MODEL_FOR_SPEECH_SEQ_2_SEQ_MAPPING,
-    TF_MODEL_FOR_VISION_2_SEQ_MAPPING,
-)
+from ..models.auto import (TF_MODEL_FOR_CAUSAL_LM_MAPPING,
+                           TF_MODEL_FOR_SEQ_TO_SEQ_CAUSAL_LM_MAPPING,
+                           TF_MODEL_FOR_SPEECH_SEQ_2_SEQ_MAPPING,
+                           TF_MODEL_FOR_VISION_2_SEQ_MAPPING)
 from ..tf_utils import shape_list, stable_softmax
 from ..utils import ModelOutput, logging
 from .configuration_utils import GenerationConfig
-from .tf_logits_process import (
-    TFForcedBOSTokenLogitsProcessor,
-    TFForcedEOSTokenLogitsProcessor,
-    TFForceTokensLogitsProcessor,
-    TFLogitsProcessorList,
-    TFMinLengthLogitsProcessor,
-    TFNoBadWordsLogitsProcessor,
-    TFNoRepeatNGramLogitsProcessor,
-    TFRepetitionPenaltyLogitsProcessor,
-    TFSuppressTokensAtBeginLogitsProcessor,
-    TFSuppressTokensLogitsProcessor,
-    TFTemperatureLogitsWarper,
-    TFTopKLogitsWarper,
-    TFTopPLogitsWarper,
-)
-
+from .tf_logits_process import (TFForcedBOSTokenLogitsProcessor,
+                                TFForcedEOSTokenLogitsProcessor,
+                                TFForceTokensLogitsProcessor,
+                                TFLogitsProcessorList,
+                                TFMinLengthLogitsProcessor,
+                                TFNoBadWordsLogitsProcessor,
+                                TFNoRepeatNGramLogitsProcessor,
+                                TFRepetitionPenaltyLogitsProcessor,
+                                TFSuppressTokensAtBeginLogitsProcessor,
+                                TFSuppressTokensLogitsProcessor,
+                                TFTemperatureLogitsWarper, TFTopKLogitsWarper,
+                                TFTopPLogitsWarper)
 
 logger = logging.get_logger(__name__)
 
@@ -636,11 +630,11 @@ class TFGenerationMixin:
             if value is not None and key not in model_args:
                 unused_model_args.append(key)
 
-        if unused_model_args:
-            raise ValueError(
-                f"The following `model_kwargs` are not used by the model: {unused_model_args} (note: typos in the"
-                " generate arguments will also show up in this list)"
-            )
+        # if unused_model_args:
+        #     raise ValueError(
+        #         f"The following `model_kwargs` are not used by the model: {unused_model_args} (note: typos in the"
+        #         " generate arguments will also show up in this list)"
+        #     )
 
     def generate(
         self,

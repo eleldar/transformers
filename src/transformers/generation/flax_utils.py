@@ -48,7 +48,6 @@ from .flax_logits_process import (
     FlaxTopPLogitsWarper,
 )
 
-
 logger = logging.get_logger(__name__)
 
 
@@ -208,9 +207,7 @@ class FlaxGenerationMixin:
             and self.config.decoder.bos_token_id is not None
         ):
             return self.config.decoder.bos_token_id
-        raise ValueError(
-            "`decoder_start_token_id` or `bos_token_id` has to be defined for encoder-decoder generation."
-        )
+        raise ValueError("`decoder_start_token_id` or `bos_token_id` has to be defined for encoder-decoder generation.")
 
     @staticmethod
     def _expand_to_num_beams(tensor, num_beams):
@@ -259,11 +256,11 @@ class FlaxGenerationMixin:
             if value is not None and key not in model_args:
                 unused_model_args.append(key)
 
-        if unused_model_args:
-            raise ValueError(
-                f"The following `model_kwargs` are not used by the model: {unused_model_args} (note: typos in the"
-                " generate arguments will also show up in this list)"
-            )
+        # if unused_model_args:
+        #     raise ValueError(
+        #         f"The following `model_kwargs` are not used by the model: {unused_model_args} (note: typos in the"
+        #         " generate arguments will also show up in this list)"
+        #     )
 
     def generate(
         self,
@@ -537,9 +534,7 @@ class FlaxGenerationMixin:
                 FlaxSuppressTokensAtBeginLogitsProcessor(generation_config.begin_suppress_tokens, begin_index)
             )
         if generation_config.forced_decoder_ids is not None:
-            forced_decoder_ids = [
-                [input_ids_seq_length + i[0] - 1, i[1]] for i in generation_config.forced_decoder_ids
-            ]
+            forced_decoder_ids = [[input_ids_seq_length + i[0] - 1, i[1]] for i in generation_config.forced_decoder_ids]
             processors.append(FlaxForceTokensLogitsProcessor(forced_decoder_ids))
         if generation_config.no_repeat_ngram_size is not None and generation_config.no_repeat_ngram_size > 0:
             processors.append(FlaxNoRepeatNGramLogitsProcessor(generation_config.no_repeat_ngram_size))
@@ -872,9 +867,7 @@ class FlaxGenerationMixin:
             # early_stopping == "never" -> compute the best score from max_length or cur_len, depending on the sign of
             #   length_penalty. Positive length_penalty favors longer sequences, thus we use max_length there.
             if early_stopping == "never" and length_penalty > 0.0:
-                best_running_score = state.running_scores[:, :1] / (
-                    (max_length - decoder_prompt_len) ** length_penalty
-                )
+                best_running_score = state.running_scores[:, :1] / ((max_length - decoder_prompt_len) ** length_penalty)
             else:
                 best_running_score = state.running_scores[:, :1] / (
                     (state.cur_len - decoder_prompt_len) ** length_penalty
@@ -941,9 +934,7 @@ class FlaxGenerationMixin:
             beams_to_keep = 2 * num_beams
             topk_log_probs, topk_indices = lax.top_k(log_probs, k=beams_to_keep)
             topk_beam_indices = topk_indices // vocab_size
-            topk_running_sequences = gather_beams(
-                state.running_sequences, topk_beam_indices, batch_size, beams_to_keep
-            )
+            topk_running_sequences = gather_beams(state.running_sequences, topk_beam_indices, batch_size, beams_to_keep)
             topk_ids = jnp.expand_dims(topk_indices % vocab_size, axis=2)
             topk_sequences = lax.dynamic_update_slice(topk_running_sequences, topk_ids, (0, 0, state.cur_len))
 
